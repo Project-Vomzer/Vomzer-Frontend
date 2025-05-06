@@ -21,7 +21,7 @@ const ProfileFeed = ({ userId }) => {
   }, [userId]);
 
   const handleNewPost = () => {
-    fetchPosts(); // Refresh after new post
+    fetchPosts(); 
   };
 
   return (

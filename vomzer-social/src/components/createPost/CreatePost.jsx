@@ -11,7 +11,7 @@ const CreatePost = ({ onPostCreated }) => {
     setIsUploading(true);
     
     try {
-      // 1. Upload media to IPFS/Cloudinary if exists
+      
       let mediaUrl = '';
       if (media) {
         const formData = new FormData();
@@ -25,7 +25,6 @@ const CreatePost = ({ onPostCreated }) => {
         mediaUrl = data.url;
       }
 
-      // 2. Submit post to blockchain/backend
       const postData = {
         content,
         media: mediaUrl,
@@ -39,7 +38,7 @@ const CreatePost = ({ onPostCreated }) => {
         body: JSON.stringify(postData)
       });
 
-      onPostCreated(); // Refresh feed
+      onPostCreated(); 
       setContent('');
       setMedia(null);
     } finally {
@@ -101,6 +100,24 @@ const CreatePost = ({ onPostCreated }) => {
                 className="hidden"
               />
             </button>
+          </div>
+          <div>
+          <div className="sticky top-16 z-10 bg-white bg-opacity-90 border-b border-gray-200">
+                            <div className="flex overflow-x-auto px-4">
+                                {['Photo', 'Video', 'News', 'Threads'].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        className={`px-4 py-3 font-medium text-sm whitespace-nowrap ${
+                                            tab === 'Photo' 
+                                                ? 'text-blue-600 border-b-2 border-blue-600' 
+                                                : 'text-gray-500 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
           </div>
           <button
             type="submit"

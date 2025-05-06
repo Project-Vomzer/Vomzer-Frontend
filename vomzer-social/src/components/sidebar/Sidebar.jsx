@@ -15,15 +15,12 @@ const Sidebar = () => {
   });
 
   return (
-    <aside className="w-72  p-4 h-screen sticky top-0 overflow-y-auto">
-      {/* Profile Section */}
+    <aside className="w-94 h-screen sticky top-0 ">
       <ProfileSection />
 
-      {/* Trends Section - Exact Match to Design */}
       <div className="mt-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Top Trends</h3>
         
-        {/* USA Trends */}
         <div className="mb-6">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">Trending in USA</h4>
           <ul className="space-y-4">
@@ -37,10 +34,8 @@ const Sidebar = () => {
           <button className="text-blue-500 text-sm mt-2 hover:underline">More</button>
         </div>
 
-        {/* Divider */}
         <div className="border-t border-gray-200 my-4"></div>
 
-        {/* Nigeria Trends */}
         <div className="mb-6">
           <h4 className="text-sm font-semibold text-gray-700 mb-3">Trending in Nigeria</h4>
           <ul className="space-y-4">
