@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 
@@ -5,80 +6,97 @@ const RightSidebar = () => {
   const [data, setData] = useState({
     pairs: null,
     fiats: null,
-    chartData: null
+    chartData: null,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const USE_MOCK_DATA = false; // Set to true to use mock data
+
+  const mockData = {
+    pairs: {
+      BTC: 0.000048,
+      ETH: 0.0012,
+    },
+    fiats: {
+      usd: 3.22,
+      eur: 2.85,
+      ngn: 5100,
+    },
+    chartData: Array.from({ length: 30 }, (_, i) => ({
+      x: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000),
+      y: 3.2 + Math.random() * 0.2,
+    })),
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Using CORS proxy
-        const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-        
-        const response = await Promise.all([
-          fetch(`${proxyUrl}https://api.binance.com/api/v3/ticker/24hr?symbols=%5B%22SUIBTC%22,%22SUIETH%22,%22SUIUSDT%22%5D`, {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          }),
-          fetch('https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd,eur,ngn'),
-          fetch(`${proxyUrl}https://api.binance.com/api/v3/klines?symbol=SUIUSDT&interval=1d&limit=30`, {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
+
+        if (USE_MOCK_DATA) {
+          setData(mockData);
+          return;
+        }
+
+        const [chartRes, priceRes] = await Promise.all([
+          fetch('/api/coingecko/coins/sui/market_chart?vs_currency=usd&days=30&interval=daily'),
+          fetch('/api/coingecko/simple/price?ids=sui,bitcoin,ethereum&vs_currencies=usd,eur,ngn,btc,eth'),
         ]);
 
-        console.log(response);
+        if (!chartRes.ok || !priceRes.ok) {
+          throw new Error('Failed to fetch data');
+        }
 
-        // const [pairs, fiats, history] = await Promise.all([
-        //   pairsRes.json(),
-        //   pricesRes.json(),
-        //   historyRes.json()
-        // ]);
+        const [chartData, priceData] = await Promise.all([
+          chartRes.json(),
+          priceRes.json(),
+        ]);
 
-        // console.log (pairs);
-        // console.log (fiats);
-        // console.log (history);
+        // Validate data
+        if (!chartData.prices || !Array.isArray(chartData.prices)) {
+          throw new Error('Invalid chart data');
+        }
+        if (!priceData.sui || !priceData.bitcoin || !priceData.ethereum) {
+          throw new Error('Invalid price data');
+        }
 
         setData({
           pairs: {
-            BTC: parseFloat(pairs.find(p => p.symbol === 'SUIBTC')?.lastPrice || 0),
-            ETH: parseFloat(pairs.find(p => p.symbol === 'SUIETH')?.lastPrice || 0),
-            USDT: parseFloat(pairs.find(p => p.symbol === 'SUIUSDT')?.lastPrice || 0)
+            BTC: parseFloat(priceData.sui.btc || 0),
+            ETH: parseFloat(priceData.sui.eth || 0),
           },
-          fiats: fiats.sui || { usd: 0, eur: 0, ngn: 0 },
-          chartData: history.map(item => ({
-            x: new Date(item[0]),
-            y: parseFloat(item[4]) // Closing price
-          }))
+          fiats: {
+            usd: parseFloat(priceData.sui.usd || 0),
+            eur: parseFloat(priceData.sui.eur || 0),
+            ngn: parseFloat(priceData.sui.ngn || 0),
+          },
+          chartData: chartData.prices.map(([timestamp, price]) => ({
+            x: new Date(timestamp),
+            y: parseFloat(price),
+          })),
         });
-
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to load data. Please try again later.");
+        console.error('Error fetching data:', error);
+        setError('Failed to load data. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(fetchData, 60000); 
 
     return () => clearInterval(interval);
   }, []);
 
-  // Chart options
   const chartOptions = {
     chart: {
       type: 'area',
       height: 200,
       toolbar: { show: false },
-      zoom: { enabled: false }
+      zoom: { enabled: false },
     },
     colors: ['#6C5DD3'],
     dataLabels: { enabled: false },
@@ -89,20 +107,26 @@ const RightSidebar = () => {
         shadeIntensity: 1,
         opacityFrom: 0.7,
         opacityTo: 0.3,
-      }
+      },
     },
     xaxis: { type: 'datetime' },
-    yaxis: { labels: { formatter: val => `$${val.toFixed(2)}` } },
+    yaxis: { labels: { formatter: (val) => `$${val.toFixed(2)}` } },
     tooltip: {
-      x: { format: 'dd MMM yyyy' }
-    }
+      x: { format: 'dd MMM yyyy' },
+    },
   };
 
   if (loading) {
     return (
-      <div className="space-y-4 py-4 h-[calc(100vh-4rem)] overflow-y-auto">
-        <div className="bg-white rounded-xl p-4 shadow-sm h-40 flex items-center justify-center">
-          Loading data...
+      <div className="space-y-4 p-4 h-[calc(100vh-4rem)] overflow-y-auto">
+        <div className="bg-white rounded-xl p-4 shadow-sm h-40 flex items-center shadow animate-pulse justify-center">
+          {/* Loading data... */}
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm h-48 flex items-center shadow animate-pulse justify-center">
+          {/* Loading data... */}
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm h-60 flex items-center shadow animate-pulse justify-center">
+          {/* Loading data... */}
         </div>
       </div>
     );
@@ -110,7 +134,7 @@ const RightSidebar = () => {
 
   if (error) {
     return (
-      <div className="space-y-4 py-4 h-[calc(100vh-4rem)] overflow-y-auto">
+      <div className="space-y-4 p-4 h-[calc(100vh-4rem)] overflow-y-auto">
         <div className="bg-white rounded-xl p-4 shadow-sm text-red-500">
           Error: {error}
         </div>
@@ -119,7 +143,7 @@ const RightSidebar = () => {
   }
 
   return (
-    <div className="space-y-4 p-4 h-[calc(100vh-4rem)] overflow-y-auto">
+    <div className="space-y-4 pt-4 h-[calc(100vh-4rem)] overflow-y-auto">
       {/* Crypto Pairs */}
       <div className="bg-white rounded-xl p-4 shadow-sm">
         <h3 className="font-bold text-sm mb-3">SUI PAIRS</h3>
@@ -131,10 +155,6 @@ const RightSidebar = () => {
           <div className="flex justify-between items-center">
             <span className="text-gray-600">SUI/ETH</span>
             <span className="font-medium">{data.pairs?.ETH?.toFixed(6) || 'N/A'}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">SUI/USDT</span>
-            <span className="font-medium">{data.pairs?.USDT?.toFixed(4) || 'N/A'}</span>
           </div>
         </div>
       </div>
@@ -158,13 +178,12 @@ const RightSidebar = () => {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-white rounded-xl p-4 shadow-sm">
-        <h3 className="font-bold text-sm mb-3">SUI CHART (30D)</h3>
+      <div className="bg-black  rounded-xl p-4 ">
+        <h3 className="font-bold text-white mb-3">SUI PRICE CHART (30D)</h3>
         {data.chartData ? (
           <Chart
             options={chartOptions}
-            series={[{ name: 'SUI Price', data: data.chartData }]}
+            series={[{ name: 'SUI Price (USD)', data: data.chartData }]}
             type="area"
             height={200}
           />

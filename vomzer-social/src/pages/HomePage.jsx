@@ -25,7 +25,7 @@ const HomePage = () => {
                     </div>
                 </div>
 
-                <div className="hidden lg:block w-80 flex-shrink-0 ">
+                <div className="hidden lg:block w-94 flex-shrink-0 ">
                     <div className="sticky pr-2 h-[calc(100vh-4rem)] overflow-y-auto">
                         <RightSidebar />
                     </div>
